@@ -96,36 +96,33 @@ app.get('/api/users/:_id/logs', async (req, res)=>{
 });
 
 app.post("/api/users/:_id/exercises", async (req, res) => {
-  
-  let { description, duration, date } = req.body;
-  const userId = req.params._id;
-  const foundUser = await User.findById(userId);
+   const id = req.params._id;
+   const { description, duration, date } = req.body;
 
-  if (!foundUser) {
-    res.json({ message: 'No user exists for that id '});
-  }
-
-  if (!date){
-    date = new Date();
-  } else {
-    date = new Date(date);
-  }
-
-  await Exercise.create({
-    username: foundUser.username,
-    description,
-    duration,
-    date,
-    userId,
-  });
-
-  res.json({
-    username: foundUser.username,
-    description,
-    duration,
-    date: date.toDateString(),
-    _id: userId
-  });
+   try{
+     const user = await User.findById(id);
+     if(!user){
+      res.send("Could not find user")
+     } else {
+      const exerciseObj = new Exercise({
+        user_id: user._id,
+        description,
+        duration,
+        date: date ? new Date(date) : new Date()
+      })
+      const exercise = await exerciseObj.save();
+      res.json({
+        _id: user._id,
+        username: user.usrname,
+        description: exercise.description,
+        duration: exercise.duration,
+        date: new Date(exercise.date).toDateString()
+      })
+     }
+   }catch(err){
+      console.log(err);
+      res.send("There was an error saving the exercise");
+   }
 });
 
 const listener = app.listen(process.env.PORT || 3000, () => {
